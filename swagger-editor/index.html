@@ -12,12 +12,12 @@
 <body>
     <div id="swagger-editor"></div>
     <div id="file-selector" style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: white; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-        <div id="status" style="margin-bottom: 10px; font-weight: bold;">Loading...</div>
-        <label for="contract-select">Select Contract:</label>
+        <div id="status" style="margin-bottom: 10px; font-weight: bold;">🔄 Loading...</div>
+        <label for="contract-select">📁 Select Contract:</label>
         <select id="contract-select" style="margin-left: 10px;">
-            <option value="">Loading contracts...</option>
+            <option value="">⏳ Loading contracts...</option>
         </select>
-                        <button id="new-contract" style="margin-left: 10px;" title="Create new contract (auto-adds .yml if no extension)">New Contract</button>
+        <button id="new-contract" style="margin-left: 10px;" title="Create new contract (auto-adds .yml if no extension)">➕ New Contract</button>
     </div>
 
     <script src="https://unpkg.com/swagger-editor-dist@4.14.6/swagger-editor-bundle.js"></script>
@@ -68,21 +68,33 @@
             window.swaggerEditor = editor;
             console.log('Editor instance created:', editor);
             
-            // Загружаем базовый контент если редактор готов
+            // Показываем иконку загрузки вместо загрузки дефолтного контента
             setTimeout(() => {
                 if (window.swaggerEditor && window.swaggerEditor.specActions) {
-                    const defaultContent = `openapi: 3.0.0
+                    const loadingContent = `openapi: 3.0.0
 info:
-  title: Swagger Editor
+  title: Welcome to Swagger Editor
   version: 1.0.0
-  description: Welcome to Swagger Editor
+  description: |
+    Select a contract from the dropdown above to start editing.
+    
+    Available actions:
+    - Select Contract: Choose from the dropdown in the top-right corner
+    - New Contract: Create a new contract file
+    - Auto-save: Changes are automatically saved every 3 seconds
+    
+    Tips:
+    - Use the contract selector to switch between different API specifications
+    - All changes are automatically saved to the selected contract file
+    - You can also use the "Save Contract" button for manual saving
 paths:
-  /hello:
+  /welcome:
     get:
-      summary: Hello World
+      summary: Welcome endpoint
+      description: This is a placeholder endpoint
       responses:
         '200':
-          description: OK
+          description: Welcome message
           content:
             application/json:
               schema:
@@ -90,10 +102,10 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "Hello World"`;
+                    example: "Welcome to Swagger Editor"`;
                     
-                    window.swaggerEditor.specActions.updateSpec(defaultContent);
-                    console.log('Default content loaded');
+                    window.swaggerEditor.specActions.updateSpec(loadingContent);
+                    console.log('Loading welcome message displayed');
                 }
             }, 2000);
         };
@@ -131,13 +143,18 @@ paths:
                         console.log('Loading contract from URL:', urlContract);
                         select.value = urlContract;
                         loadContract(urlContract);
+                        document.getElementById('status').innerHTML = '✅ Contract loaded from URL';
                     } else if (currentValue && contracts.includes(currentValue)) {
                         // Восстанавливаем выбранное значение
                         select.value = currentValue;
+                        document.getElementById('status').innerHTML = '✅ Ready - select a contract';
                     } else if (contracts.length > 0) {
-                        // Устанавливаем первое по алфавиту
+                        // Устанавливаем первое по алфавиту, но НЕ загружаем автоматически
                         select.value = contracts[0];
-                        loadContract(contracts[0]);
+                        document.getElementById('status').innerHTML = '✅ Ready - select a contract';
+                        // Не вызываем loadContract() - пользователь сам выберет
+                    } else {
+                        document.getElementById('status').innerHTML = '⚠️ No contracts available';
                     }
                 })
                 .catch(error => {
@@ -167,6 +184,7 @@ paths:
                         
                         window.swaggerEditor.specActions.updateSpec(content);
                         console.log('Contract loaded into editor');
+                        document.getElementById('status').innerHTML = '✅ Contract loaded: ' + filename;
                         
                         // Обновляем lastSavedContent для автосохранения
                         if (window.lastSavedContent !== undefined) {
@@ -193,34 +211,44 @@ paths:
                 });
         }
 
-        // Обработчик изменения контракта
-        document.getElementById('contract-select').addEventListener('change', function(e) {
-            if (e.target.value) {
-                loadContract(e.target.value);
+        // Добавление обработчиков событий после загрузки DOM
+        function addEventListeners() {
+            // Обработчик изменения контракта
+            const contractSelect = document.getElementById('contract-select');
+            if (contractSelect) {
+                contractSelect.addEventListener('change', function(e) {
+                    if (e.target.value) {
+                        loadContract(e.target.value);
+                    }
+                });
             }
-        });
 
-        // Обработчик кнопки сохранения контракта
-        document.getElementById('save-contract').addEventListener('click', function() {
-            if (window.autoSaveFunctions && window.autoSaveFunctions.manualSave) {
-                window.autoSaveFunctions.manualSave();
-            } else {
-                console.error('Auto-save functions not available');
+            // Обработчик кнопки сохранения контракта
+            const saveButton = document.getElementById('save-contract');
+            if (saveButton) {
+                saveButton.addEventListener('click', function() {
+                    if (window.autoSaveFunctions && window.autoSaveFunctions.manualSave) {
+                        window.autoSaveFunctions.manualSave();
+                    } else {
+                        console.error('Auto-save functions not available');
+                    }
+                });
             }
-        });
 
-        // Создание нового контракта
-        document.getElementById('new-contract').addEventListener('click', function() {
-            const filename = prompt('Enter contract filename (e.g., new-contract or new-contract.yml):');
-            if (filename) {
-                // Автоматически добавляем .yml если расширение не указано
-                let finalFilename = filename.trim();
-                if (!finalFilename.endsWith('.yaml') && !finalFilename.endsWith('.yml') && !finalFilename.endsWith('.json')) {
-                    finalFilename += '.yml';
-                    console.log('Auto-added .yml extension:', finalFilename);
-                }
-                
-                const defaultContent = `openapi: 3.0.0
+            // Создание нового контракта
+            const newContractButton = document.getElementById('new-contract');
+            if (newContractButton) {
+                newContractButton.addEventListener('click', function() {
+                    const filename = prompt('Enter contract filename (e.g., new-contract or new-contract.yml):');
+                    if (filename) {
+                        // Автоматически добавляем .yml если расширение не указано
+                        let finalFilename = filename.trim();
+                        if (!finalFilename.endsWith('.yaml') && !finalFilename.endsWith('.yml') && !finalFilename.endsWith('.json')) {
+                            finalFilename += '.yml';
+                            console.log('Auto-added .yml extension:', finalFilename);
+                        }
+                        
+                        const defaultContent = `openapi: 3.0.0
 info:
   title: New API
   version: 1.0.0
@@ -241,25 +269,30 @@ paths:
                     type: string
                     example: "Hello World"`;
 
-                fetch(`/contracts/${finalFilename}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/yaml'
-                    },
-                    body: defaultContent
-                })
-                .then(() => {
-                    loadContracts();
-                    document.getElementById('contract-select').value = finalFilename;
-                    window.swaggerEditor.specActions.updateSpec(defaultContent);
-                    console.log('Contract created successfully:', finalFilename);
-                })
-                .catch(error => {
-                    console.error('Error creating contract:', error);
-                    alert('Error creating contract: ' + error.message);
+                        fetch(`/contracts/${finalFilename}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/yaml'
+                            },
+                            body: defaultContent
+                        })
+                        .then(() => {
+                            loadContracts();
+                            document.getElementById('contract-select').value = finalFilename;
+                            window.swaggerEditor.specActions.updateSpec(defaultContent);
+                            console.log('Contract created successfully:', finalFilename);
+                        })
+                        .catch(error => {
+                            console.error('Error creating contract:', error);
+                            alert('Error creating contract: ' + error.message);
+                        });
+                    }
                 });
             }
-        });
+        }
+
+        // Вызываем добавление обработчиков событий
+        addEventListeners();
     </script>
 </body>
 </html> 
