@@ -66,6 +66,12 @@
     <script src="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-bundle.js"></script>
     <script src="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-standalone-preset.js"></script>
     <script>
+        // Получение параметра contract из URL
+        function getContractFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('contract');
+        }
+
         window.onload = function() {
             // Загрузка списка контрактов
             loadContracts();
@@ -96,7 +102,14 @@
                         select.appendChild(option);
                     });
 
-                    if (contracts.length > 0) {
+                    // Проверяем, есть ли параметр contract в URL
+                    const urlContract = getContractFromURL();
+                    if (urlContract && contracts.includes(urlContract)) {
+                        console.log('Loading contract from URL:', urlContract);
+                        select.value = urlContract;
+                        loadContract(urlContract);
+                    } else if (contracts.length > 0) {
+                        // Устанавливаем первое по алфавиту
                         select.value = contracts[0];
                         loadContract(contracts[0]);
                     }

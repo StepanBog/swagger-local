@@ -98,6 +98,12 @@ paths:
             }, 2000);
         };
 
+        // Получение параметра contract из URL
+        function getContractFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('contract');
+        }
+
         // Загрузка списка контрактов
         function loadContracts() {
             console.log('Loading contracts...');
@@ -119,10 +125,17 @@ paths:
                         select.appendChild(option);
                     });
 
-                    // Восстанавливаем выбранное значение или устанавливаем первое
-                    if (currentValue && contracts.includes(currentValue)) {
+                    // Проверяем, есть ли параметр contract в URL
+                    const urlContract = getContractFromURL();
+                    if (urlContract && contracts.includes(urlContract)) {
+                        console.log('Loading contract from URL:', urlContract);
+                        select.value = urlContract;
+                        loadContract(urlContract);
+                    } else if (currentValue && contracts.includes(currentValue)) {
+                        // Восстанавливаем выбранное значение
                         select.value = currentValue;
                     } else if (contracts.length > 0) {
+                        // Устанавливаем первое по алфавиту
                         select.value = contracts[0];
                         loadContract(contracts[0]);
                     }
