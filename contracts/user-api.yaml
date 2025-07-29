@@ -1,0 +1,276 @@
+openapi: 3.0.0
+info:
+  title: User Management API
+  version: 1.0.0
+  description: API for managing users in the system
+servers:
+  - url: http://localhost:8080
+    description: Development server
+paths:
+  /users:
+    get:
+      summary: List all users
+      description: Returns a list of all users in the system
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Maximum number of users to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of users to skip
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  total:
+                    type: integer
+                    description: Total number of users
+    post:
+      summary: Create a new user
+      description: Creates a new user in the system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input data
+  /users/{userId}:
+    get:
+      summary: Get user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the user to retrieve
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+    put:
+      summary: Update user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the user to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+        '404':
+          description: User not found
+    delete:
+      summary: Delete user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the user to delete
+      responses:
+        '204':
+          description: User deleted successfully
+        '404':
+          description: User not found
+  /users/{userId}/profile:
+    get:
+      summary: Get user profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: User profile found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          description: User not found
+    put:
+      summary: Update user profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+      responses:
+        '200':
+          description: Profile updated successfully
+        '404':
+          description: User not found
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - email
+        - username
+        - status
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the user
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "john.doe@example.com"
+        username:
+          type: string
+          description: User's username
+          example: "johndoe"
+        firstName:
+          type: string
+          description: User's first name
+          example: "John"
+        lastName:
+          type: string
+          description: User's last name
+          example: "Doe"
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+          description: User account status
+          example: "active"
+        createdAt:
+          type: string
+          format: date-time
+          description: When the user was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the user was last updated
+    CreateUserRequest:
+      type: object
+      required:
+        - email
+        - username
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+        username:
+          type: string
+          description: User's username
+        password:
+          type: string
+          description: User's password
+        firstName:
+          type: string
+          description: User's first name
+        lastName:
+          type: string
+          description: User's last name
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+        username:
+          type: string
+          description: User's username
+        firstName:
+          type: string
+          description: User's first name
+        lastName:
+          type: string
+          description: User's last name
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+          description: User account status
+    UserProfile:
+      type: object
+      properties:
+        bio:
+          type: string
+          description: User's biography
+          example: "Software developer with 5 years of experience"
+        avatar:
+          type: string
+          format: uri
+          description: URL to user's avatar image
+          example: "https://example.com/avatars/john.jpg"
+        location:
+          type: string
+          description: User's location
+          example: "New York, NY"
+        website:
+          type: string
+          format: uri
+          description: User's website URL
+          example: "https://johndoe.com"
+        socialLinks:
+          type: object
+          properties:
+            twitter:
+              type: string
+              example: "https://twitter.com/johndoe"
+            linkedin:
+              type: string
+              example: "https://linkedin.com/in/johndoe"
+            github:
+              type: string
+              example: "https://github.com/johndoe"
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string 

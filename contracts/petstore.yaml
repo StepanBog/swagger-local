@@ -1,0 +1,141 @@
+openapi: 3.0.0
+info:
+  title: Pet Store API
+  version: 1.0.0
+  description: A sample Pet Store API for demonstration
+servers:
+  - url: http://localhost:8080
+    description: Development server
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      description: Returns a list of all pets in the store
+      responses:
+        '200':
+          description: A list of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+    post:
+      summary: Create a new pet
+      description: Adds a new pet to the store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        '201':
+          description: Pet created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+  /pets/{petId}:
+    get:
+      summary: Get pet by ID
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the pet to retrieve
+      responses:
+        '200':
+          description: Pet found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '404':
+          description: Pet not found
+    put:
+      summary: Update pet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the pet to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        '200':
+          description: Pet updated successfully
+        '404':
+          description: Pet not found
+    delete:
+      summary: Delete pet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the pet to delete
+      responses:
+        '204':
+          description: Pet deleted successfully
+        '404':
+          description: Pet not found
+components:
+  schemas:
+    Pet:
+      type: object
+      required:
+        - name
+        - status
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the pet
+        name:
+          type: string
+          description: Name of the pet
+          example: "Fluffy"
+        status:
+          type: string
+          enum: [available, pending, sold]
+          description: Pet status in the store
+          example: "available"
+        category:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+              example: "Dogs"
+        tags:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+                example: "friendly"
+        photoUrls:
+          type: array
+          items:
+            type: string
+          example: ["http://example.com/photo1.jpg"]
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string 
