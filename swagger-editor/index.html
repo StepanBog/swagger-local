@@ -17,7 +17,7 @@
         <select id="contract-select" style="margin-left: 10px;">
             <option value="">Loading contracts...</option>
         </select>
-                        <button id="new-contract" style="margin-left: 10px;" title="Create new contract (auto-adds .yaml if no extension)">New Contract</button>
+                        <button id="new-contract" style="margin-left: 10px;" title="Create new contract (auto-adds .yml if no extension)">New Contract</button>
     </div>
 
     <script src="https://unpkg.com/swagger-editor-dist@4.14.6/swagger-editor-bundle.js"></script>
@@ -198,13 +198,13 @@ paths:
 
         // Создание нового контракта
         document.getElementById('new-contract').addEventListener('click', function() {
-            const filename = prompt('Enter contract filename (e.g., new-contract or new-contract.yaml):');
+            const filename = prompt('Enter contract filename (e.g., new-contract or new-contract.yml):');
             if (filename) {
-                // Автоматически добавляем .yaml если расширение не указано
+                // Автоматически добавляем .yml если расширение не указано
                 let finalFilename = filename.trim();
                 if (!finalFilename.endsWith('.yaml') && !finalFilename.endsWith('.yml') && !finalFilename.endsWith('.json')) {
-                    finalFilename += '.yaml';
-                    console.log('Auto-added .yaml extension:', finalFilename);
+                    finalFilename += '.yml';
+                    console.log('Auto-added .yml extension:', finalFilename);
                 }
                 
                 const defaultContent = `openapi: 3.0.0

@@ -1,0 +1,20 @@
+openapi: 3.0.0
+info:
+  title: Новый API
+  version: 1.0.0
+  description: Описание нового API
+paths:
+  /example:
+    get:
+      summary: Пример эндпоинта
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Hello World"
