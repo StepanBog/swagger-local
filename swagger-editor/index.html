@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swagger Editor</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-editor-dist@4.14.6/swagger-editor.css" >
+    <link rel="icon" type="image/png" href="./images/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./images/favicon-16x16.png" sizes="16x16" />
+</head>
+
+<body>
+    <div id="swagger-editor"></div>
+    <div id="file-selector" style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: white; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        <div id="status" style="margin-bottom: 10px; font-weight: bold;">Loading...</div>
+        <label for="contract-select">Select Contract:</label>
+        <select id="contract-select" style="margin-left: 10px;">
+            <option value="">Loading contracts...</option>
+        </select>
+        <button id="new-contract" style="margin-left: 10px;">New Contract</button>
+    </div>
+
+    <script src="https://unpkg.com/swagger-editor-dist@4.14.6/swagger-editor-bundle.js"></script>
+    <script src="./auto-save.js"></script>
+    <script>
+        // Инициализация Swagger Editor
+        window.onload = function() {
+            console.log('Window loaded, initializing Swagger Editor...');
+            
+            // Проверяем, что SwaggerEditorBundle доступен
+            if (typeof SwaggerEditorBundle === 'undefined') {
+                console.error('SwaggerEditorBundle is not loaded!');
+                document.getElementById('swagger-editor').innerHTML = '<div style="padding: 20px; color: red;">Error: Swagger Editor failed to load. Please refresh the page.</div>';
+                return;
+            }
+            
+            console.log('SwaggerEditorBundle is available, creating editor...');
+            
+            // Конфигурация Swagger Editor
+            const editor = SwaggerEditorBundle({
+                dom_id: '#swagger-editor',
+                presets: [
+                    SwaggerEditorBundle.presets
+                ],
+                plugins: [
+                    SwaggerEditorBundle.plugins
+                ],
+                // Минимальная конфигурация
+                onComplete: function() {
+                    console.log('Swagger Editor loaded successfully');
+                    document.getElementById('status').innerHTML = '✅ Editor loaded successfully';
+                    setTimeout(() => {
+                        try {
+                            initializeAutoSave();
+                            loadContracts();
+                        } catch (error) {
+                            console.error('Error in onComplete:', error);
+                        }
+                    }, 2000);
+                },
+                onError: function(error) {
+                    console.error('Swagger Editor error:', error);
+                    document.getElementById('swagger-editor').innerHTML = '<div style="padding: 20px; color: red;">Error loading Swagger Editor: ' + error + '</div>';
+                }
+            });
+
+            // Глобальная переменная для доступа к редактору
+            window.swaggerEditor = editor;
+            console.log('Editor instance created:', editor);
+            
+            // Загружаем базовый контент если редактор готов
+            setTimeout(() => {
+                if (window.swaggerEditor && window.swaggerEditor.specActions) {
+                    const defaultContent = `openapi: 3.0.0
+info:
+  title: Swagger Editor
+  version: 1.0.0
+  description: Welcome to Swagger Editor
+paths:
+  /hello:
+    get:
+      summary: Hello World
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Hello World"`;
+                    
+                    window.swaggerEditor.specActions.updateSpec(defaultContent);
+                    console.log('Default content loaded');
+                }
+            }, 2000);
+        };
+
+        // Загрузка списка контрактов
+        function loadContracts() {
+            console.log('Loading contracts...');
+            fetch('/contracts')
+                .then(response => {
+                    console.log('Contracts response status:', response.status);
+                    return response.json();
+                })
+                .then(contracts => {
+                    console.log('Contracts loaded:', contracts);
+                    const select = document.getElementById('contract-select');
+                    const currentValue = select.value; // Сохраняем текущее значение
+                    select.innerHTML = '';
+                    
+                    contracts.forEach(contract => {
+                        const option = document.createElement('option');
+                        option.value = contract;
+                        option.textContent = contract;
+                        select.appendChild(option);
+                    });
+
+                    // Восстанавливаем выбранное значение или устанавливаем первое
+                    if (currentValue && contracts.includes(currentValue)) {
+                        select.value = currentValue;
+                    } else if (contracts.length > 0) {
+                        select.value = contracts[0];
+                        loadContract(contracts[0]);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading contracts:', error);
+                });
+        }
+
+        // Загрузка контракта
+        function loadContract(filename) {
+            console.log('Loading contract:', filename);
+            fetch(`/contracts/${filename}`)
+                .then(response => {
+                    console.log('Contract response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(content => {
+                    console.log('Contract content loaded, updating editor...');
+                    if (window.swaggerEditor && window.swaggerEditor.specActions) {
+                        // Временно отключаем автосохранение при загрузке контракта
+                        const wasAutoSaveEnabled = window.autoSaveInterval;
+                        if (wasAutoSaveEnabled) {
+                            clearInterval(window.autoSaveInterval);
+                        }
+                        
+                        window.swaggerEditor.specActions.updateSpec(content);
+                        console.log('Contract loaded into editor');
+                        
+                        // Обновляем lastSavedContent для автосохранения
+                        if (window.lastSavedContent !== undefined) {
+                            window.lastSavedContent = content;
+                            console.log('Updated lastSavedContent for auto-save');
+                        }
+                        
+                        // Восстанавливаем автосохранение через небольшую задержку
+                        if (wasAutoSaveEnabled) {
+                            setTimeout(() => {
+                                if (window.autoSaveFunctions && window.autoSaveFunctions.initializeAutoSave) {
+                                    window.autoSaveFunctions.initializeAutoSave();
+                                }
+                            }, 1000);
+                        }
+                    } else {
+                        console.error('Swagger Editor not ready yet, retrying in 1 second...');
+                        setTimeout(() => loadContract(filename), 1000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading contract:', error);
+                    alert('Error loading contract: ' + error.message);
+                });
+        }
+
+        // Обработчик изменения контракта
+        document.getElementById('contract-select').addEventListener('change', function(e) {
+            if (e.target.value) {
+                loadContract(e.target.value);
+            }
+        });
+
+        // Обработчик кнопки сохранения контракта
+        document.getElementById('save-contract').addEventListener('click', function() {
+            if (window.autoSaveFunctions && window.autoSaveFunctions.manualSave) {
+                window.autoSaveFunctions.manualSave();
+            } else {
+                console.error('Auto-save functions not available');
+            }
+        });
+
+        // Создание нового контракта
+        document.getElementById('new-contract').addEventListener('click', function() {
+            const filename = prompt('Enter contract filename (e.g., new-contract.yaml):');
+            if (filename) {
+                const defaultContent = `openapi: 3.0.0
+info:
+  title: New API
+  version: 1.0.0
+  description: New API description
+paths:
+  /example:
+    get:
+      summary: Example endpoint
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Hello World"`;
+
+                fetch(`/contracts/${filename}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/yaml'
+                    },
+                    body: defaultContent
+                })
+                .then(() => {
+                    loadContracts();
+                    document.getElementById('contract-select').value = filename;
+                    window.swaggerEditor.specActions.updateSpec(defaultContent);
+                })
+                .catch(error => {
+                    console.error('Error creating contract:', error);
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

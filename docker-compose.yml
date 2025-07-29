@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  swagger-editor:
+    build:
+      context: ./swagger-editor
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./contracts:/swagger-editor/contracts
+    environment:
+      - NODE_ENV=development
+    networks:
+      - swagger-network
+
+  swagger-ui:
+    build:
+      context: ./swagger-ui
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./contracts:/swagger-ui/contracts
+    environment:
+      - NODE_ENV=development
+    networks:
+      - swagger-network
+
+  auto-save-service:
+    build:
+      context: ./auto-save
+      dockerfile: Dockerfile
+    volumes:
+      - ./contracts:/app/contracts
+    environment:
+      - NODE_ENV=development
+    networks:
+      - swagger-network
+    depends_on:
+      - swagger-editor
+
+  main-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.main
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    networks:
+      - swagger-network
+    depends_on:
+      - swagger-editor
+      - swagger-ui
+
+networks:
+  swagger-network:
+    driver: bridge
+
+volumes:
+  contracts: 

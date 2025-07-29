@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui.css" />
+    <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./favicon-16x16.png" sizes="16x16" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin:0;
+            background: #fafafa;
+        }
+        .contract-selector {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .contract-selector select {
+            margin-left: 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .contract-selector button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .contract-selector button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="contract-selector">
+        <label for="contract-select">Select Contract:</label>
+        <select id="contract-select">
+            <option value="">Loading contracts...</option>
+        </select>
+        <button id="refresh-contracts">Refresh</button>
+    </div>
+    
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            // Загрузка списка контрактов
+            loadContracts();
+            
+            // Обработчик кнопки обновления
+            document.getElementById('refresh-contracts').addEventListener('click', loadContracts);
+        };
+
+        function loadContracts() {
+            fetch('/contracts')
+                .then(response => response.json())
+                .then(contracts => {
+                    const select = document.getElementById('contract-select');
+                    select.innerHTML = '';
+                    
+                    if (contracts.length === 0) {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No contracts available';
+                        select.appendChild(option);
+                        return;
+                    }
+                    
+                    contracts.forEach(contract => {
+                        const option = document.createElement('option');
+                        option.value = contract;
+                        option.textContent = contract;
+                        select.appendChild(option);
+                    });
+
+                    if (contracts.length > 0) {
+                        select.value = contracts[0];
+                        loadContract(contracts[0]);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading contracts:', error);
+                    const select = document.getElementById('contract-select');
+                    select.innerHTML = '<option value="">Error loading contracts</option>';
+                });
+        }
+
+        function loadContract(filename) {
+            if (!filename) return;
+            
+            const url = `/contracts/${filename}`;
+            
+            // Инициализация Swagger UI
+            const ui = SwaggerUIBundle({
+                url: url,
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                onComplete: function() {
+                    console.log('Swagger UI loaded for contract:', filename);
+                },
+                onFailure: function(data) {
+                    console.error('Failed to load contract:', data);
+                    document.getElementById('swagger-ui').innerHTML = 
+                        '<div style="padding: 20px; text-align: center; color: red;">' +
+                        'Failed to load contract: ' + filename + '<br>' +
+                        'Please check if the contract file exists and is valid.' +
+                        '</div>';
+                }
+            });
+        }
+
+        // Обработчик изменения контракта
+        document.getElementById('contract-select').addEventListener('change', function(e) {
+            if (e.target.value) {
+                loadContract(e.target.value);
+            }
+        });
+    </script>
+</body>
+</html> 
