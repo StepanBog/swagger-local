@@ -17,7 +17,7 @@
         <select id="contract-select" style="margin-left: 10px;">
             <option value="">Loading contracts...</option>
         </select>
-        <button id="new-contract" style="margin-left: 10px;">New Contract</button>
+                        <button id="new-contract" style="margin-left: 10px;" title="Create new contract (auto-adds .yaml if no extension)">New Contract</button>
     </div>
 
     <script src="https://unpkg.com/swagger-editor-dist@4.14.6/swagger-editor-bundle.js"></script>
@@ -198,8 +198,15 @@ paths:
 
         // Создание нового контракта
         document.getElementById('new-contract').addEventListener('click', function() {
-            const filename = prompt('Enter contract filename (e.g., new-contract.yaml):');
+            const filename = prompt('Enter contract filename (e.g., new-contract or new-contract.yaml):');
             if (filename) {
+                // Автоматически добавляем .yaml если расширение не указано
+                let finalFilename = filename.trim();
+                if (!finalFilename.endsWith('.yaml') && !finalFilename.endsWith('.yml') && !finalFilename.endsWith('.json')) {
+                    finalFilename += '.yaml';
+                    console.log('Auto-added .yaml extension:', finalFilename);
+                }
+                
                 const defaultContent = `openapi: 3.0.0
 info:
   title: New API
@@ -221,7 +228,7 @@ paths:
                     type: string
                     example: "Hello World"`;
 
-                fetch(`/contracts/${filename}`, {
+                fetch(`/contracts/${finalFilename}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/yaml'
@@ -230,11 +237,13 @@ paths:
                 })
                 .then(() => {
                     loadContracts();
-                    document.getElementById('contract-select').value = filename;
+                    document.getElementById('contract-select').value = finalFilename;
                     window.swaggerEditor.specActions.updateSpec(defaultContent);
+                    console.log('Contract created successfully:', finalFilename);
                 })
                 .catch(error => {
                     console.error('Error creating contract:', error);
+                    alert('Error creating contract: ' + error.message);
                 });
             }
         });
