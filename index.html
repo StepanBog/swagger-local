@@ -163,48 +163,7 @@
             background: linear-gradient(45deg, #ff6b6b, #ee5a52);
         }
 
-        .status-section {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
 
-        .status-section h2 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-            color: #333;
-            text-align: center;
-        }
-
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .status-item {
-            text-align: center;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #28a745;
-        }
-
-        .status-item.error {
-            border-left-color: #dc3545;
-        }
-
-        .status-item h3 {
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .status-item p {
-            color: #666;
-            font-size: 0.9rem;
-        }
 
         .loading {
             display: none;
@@ -309,12 +268,7 @@
             </div>
         </div>
 
-        <div class="status-section">
-            <h2>📊 Статус сервисов</h2>
-            <div class="status-grid" id="status-grid">
-                <!-- Статус будет загружен динамически -->
-            </div>
-        </div>
+
     </div>
 
     <div id="notification" class="notification"></div>
@@ -439,37 +393,7 @@
             loading.style.display = 'none';
         }
 
-        async function checkServiceStatus() {
-            const statusGrid = document.getElementById('status-grid');
-            statusGrid.innerHTML = '';
 
-            const services = [
-                { name: 'Swagger Editor', url: 'http://localhost:8080', icon: '✏️' },
-                { name: 'Swagger UI', url: 'http://localhost:8081', icon: '📖' },
-                { name: 'Auto-save Service', url: 'http://localhost:3000', icon: '💾' }
-            ];
-
-            for (const service of services) {
-                const statusItem = document.createElement('div');
-                statusItem.className = 'status-item';
-                
-                try {
-                    const response = await fetch(service.url, { method: 'HEAD' });
-                    statusItem.innerHTML = `
-                        <h3>${service.icon} ${service.name}</h3>
-                        <p style="color: #28a745;">✅ Работает</p>
-                    `;
-                } catch (error) {
-                    statusItem.className = 'status-item error';
-                    statusItem.innerHTML = `
-                        <h3>${service.icon} ${service.name}</h3>
-                        <p style="color: #dc3545;">❌ Недоступен</p>
-                    `;
-                }
-                
-                statusGrid.appendChild(statusItem);
-            }
-        }
 
         // Обработчики событий
         function refreshContracts() {
@@ -554,10 +478,6 @@ paths:
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             displayContracts();
-            checkServiceStatus();
-            
-            // Обновление статуса каждые 30 секунд
-            setInterval(checkServiceStatus, 30000);
         });
     </script>
 </body>
