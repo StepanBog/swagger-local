@@ -478,8 +478,15 @@
         }
 
         function createNewContract() {
-            const filename = prompt('Введите имя файла (например: new-api.yaml):');
+            const filename = prompt('Введите имя файла (например: new-api или new-api.yaml):');
             if (!filename) return;
+            
+            // Автоматически добавляем .yaml если расширение не указано
+            let finalFilename = filename.trim();
+            if (!finalFilename.endsWith('.yaml') && !finalFilename.endsWith('.yml') && !finalFilename.endsWith('.json')) {
+                finalFilename += '.yaml';
+                console.log('Auto-added .yaml extension:', finalFilename);
+            }
             
             const defaultContent = `openapi: 3.0.0
 info:
@@ -502,7 +509,7 @@ paths:
                     type: string
                     example: "Hello World"`;
 
-            fetch(`http://localhost:8080/contracts/${filename}`, {
+            fetch(`http://localhost:8080/contracts/${finalFilename}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/yaml'
@@ -511,7 +518,7 @@ paths:
             })
             .then(response => {
                 if (response.ok) {
-                    showNotification('Контракт создан успешно', 'success');
+                    showNotification(`Контракт "${finalFilename}" создан успешно`, 'success');
                     displayContracts();
                 } else {
                     showNotification('Ошибка создания контракта', 'error');
